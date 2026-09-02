@@ -148,3 +148,52 @@ def test_record_acumula_historial_totales_y_contador_de_prompts():
     assert c.totals.cost == pytest.approx(0.003)
     # El turno siguiente arrastra el historial completo.
     assert len(c.outbound_messages("p3")) == 5
+
+
+# --- log .md --------------------------------------------------------------
+
+def _conv_con_dos_turnos():
+    c = Conversation(model_id=HAIKU.id, static_context="EL CONTRATO")
+    c.record("p1", "r1", Usage(3480, 512, 3412, 340, 0.00214, -0.0004), TurnParams(thinking_budget=4000))
+    c.record("p2", "r2", Usage(3600, 200, 3412, 10, 0.0011, 0.0031), TurnParams())
+    return c
+
+
+def test_el_log_registra_prompts_usage_y_totales(tmp_path):
+    from core import mdlog
+
+    c = _conv_con_dos_turnos()
+    p = mdlog.write(c, HAIKU, logs_dir=tmp_path)
+    md = p.read_text(encoding="utf-8")
+
+    assert "slot: 2" in md and HAIKU.id in md
+    assert "**Prompts de usuario: 2**" in md
+    assert "thinking_budget=4000" in md          # los params quedan por turno
+    assert "Cache hit" in md
+    assert "-$0.000400" in md                    # el discount negativo, con signo
+    assert "7,080" in md and "$0.003240" in md   # totales
+
+
+def test_el_log_es_idempotente_y_reescribe_completo(tmp_path):
+    from core import mdlog
+
+    c = _conv_con_dos_turnos()
+    primero = mdlog.write(c, HAIKU, logs_dir=tmp_path).read_text()
+    segundo = mdlog.write(c, HAIKU, logs_dir=tmp_path).read_text()
+    assert primero == segundo
+    assert len(list(tmp_path.iterdir())) == 1
+
+
+def test_el_nombre_del_log_identifica_slot_y_modelo(tmp_path):
+    from core import mdlog
+
+    p = mdlog.path_for(Conversation(model_id=DEEPSEEK.id), DEEPSEEK, logs_dir=tmp_path)
+    assert p.name.endswith("__slot4__deepseek-v4-flash-0731.md")
+
+
+def test_el_bloque_estatico_con_backticks_no_rompe_el_log(tmp_path):
+    from core import mdlog
+
+    c = Conversation(model_id=HAIKU.id, static_context="ejemplo:\n```python\nx = 1\n```")
+    md = mdlog.write(c, HAIKU, logs_dir=tmp_path).read_text()
+    assert "````text" in md      # la valla se alarga para envolver el ejemplo
