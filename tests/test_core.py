@@ -3,6 +3,7 @@
 Sin red: los payloads son fijos.
 """
 import json
+from pathlib import Path
 
 import pytest
 
@@ -197,3 +198,15 @@ def test_el_bloque_estatico_con_backticks_no_rompe_el_log(tmp_path):
     c = Conversation(model_id=HAIKU.id, static_context="ejemplo:\n```python\nx = 1\n```")
     md = mdlog.write(c, HAIKU, logs_dir=tmp_path).read_text()
     assert "````text" in md      # la valla se alarga para envolver el ejemplo
+
+
+def test_abrir_una_conversacion_no_escribe_log_hasta_el_primer_turno(tmp_path):
+    from core.store import Store
+
+    s = Store(logs_dir=tmp_path)
+    conv = s.new(HAIKU, "EL CONTRATO")
+    assert conv.log_path                       # el path ya se conoce
+    assert not list(tmp_path.glob("*.md"))     # pero el archivo todavia no existe
+
+    s.record(conv, HAIKU, "p1", "r1", Usage(10, 5, cost=0.001), TurnParams())
+    assert [p.name for p in tmp_path.glob("*.md")] == [Path(conv.log_path).name]

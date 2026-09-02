@@ -32,9 +32,10 @@ class Store:
     def new(self, model: Model, static_context: str) -> Conversation:
         conv = Conversation(model_id=model.id, static_context=static_context)
         self._conversations[conv.id] = conv
-        # Escribimos el log ya vacio: el archivo existe desde el minuto cero y
-        # la UI puede mostrar su path antes del primer mensaje.
-        conv.log_path = str(mdlog.write(conv, model, self.logs_dir))
+        # El path se conoce desde el arranque (sale del timestamp), pero el
+        # archivo se escribe recien con el primer turno: mirar modelos en el
+        # dropdown no tiene por que ensuciar la evidencia con logs vacios.
+        conv.log_path = str(mdlog.path_for(conv, model, self.logs_dir))
         return conv
 
     def get(self, conversation_id: str) -> Conversation:
