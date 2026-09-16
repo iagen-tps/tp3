@@ -1,0 +1,42 @@
+{
+  "id": "454568ea24b2",
+  "model_id": "google/gemini-3.7-flash",
+  "started_at": "2026-09-16T15:41:41",
+  "static_context": "",
+  "prompt_count": 1,
+  "totals": {
+    "prompt_tokens": 21,
+    "completion_tokens": 1465,
+    "cached_tokens": 0,
+    "reasoning_tokens": 763,
+    "fresh_prompt_tokens": 21,
+    "cost": 0.0055095,
+    "cache_discount": 0.0,
+    "cache_hit": false
+  },
+  "title": "Prueba Gemini",
+  "turns": [
+    {
+      "n": 1,
+      "prompt": "Prueba Gemini\n\nGenerar tabla MD, bullets y un sample code python para una secuencia fibonnaci",
+      "reply": "¡Hola! Aquí tienes los tres elementos solicitados sobre la **Secuencia de Fibonacci**:\n\n---\n\n### 1. Tabla en Markdown (Primeros 8 términos)\n\n| Posición ($n$) | Valor ($F_n$) | Operación / Regla |\n| :---: | :---: | :--- |\n| **0** | 0 | Caso base |\n| **1** | 1 | Caso base |\n| **2** | 1 | $0 + 1$ |\n| **3** | 2 | $1 + 1$ |\n| **4** | 3 | $1 + 2$ |\n| **5** | 5 | $2 + 3$ |\n| **6** | 8 | $3 + 5$ |\n| **7** | 13 | $5 + 8$ |\n\n---\n\n### 2. Puntos clave (Bullets)\n\n* **Definición:** Es una serie infinita de números naturales donde cada término es la suma de los dos anteriores, comenzando comúnmente con $0$ y $1$.\n* **Fórmula recursiva:** Se define formalmente como $F_n = F_{n-1} + F_{n-2}$ para $n \\geq 2$.\n* **Relación con el Número Áureo:** Al dividir un término de Fibonacci entre su predecesor ($F_n / F_{n-1}$), el resultado converge hacia $\\phi$ (Phi $\\approx 1.618033...$).\n* **Presencia en la naturaleza:** Se puede observar en la disposición de los pétalos de las flores, las piñas de los pinos, las ramas de los árboles y la espiral de los caracoles.\n* **Uso en informática:** Es el ejemplo clásico para enseñar recursividad, optimización mediante programación dinámica y estructuras de datos (como el *Fibonacci Heap*).\n\n---\n\n### 3. Código en Python\n\nImplementación eficiente e iterativa para generar los primeros $N$ números de la secuencia:\n\n```python\ndef generar_fibonacci(n: int) -> list[int]:\n    \"\"\"Genera una lista con los primeros 'n' términos de la secuencia de Fibonacci.\"\"\"\n    if n <= 0:\n        return []\n    elif n == 1:\n        return [0]\n\n    # Inicializamos con los dos primeros casos base\n    secuencia = [0, 1]\n\n    # Generamos los siguientes términos\n    for _ in range(2, n):\n        siguiente_numero = secuencia[-1] + secuencia[-2]\n        secuencia.append(siguiente_numero)\n\n    return secuencia\n\n\n# --- Ejemplo de uso ---\nif __name__ == \"__main__\":\n    limite = 10\n    resultado = generar_fibonacci(limite)\n    print(f\"Primeros {limite} números de Fibonacci:\")\n    print(resultado)\n```\n\n**Salida del código:**\n```text\nPrimeros 10 números de Fibonacci:\n[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]\n```",
+      "usage": {
+        "prompt_tokens": 21,
+        "completion_tokens": 1465,
+        "cached_tokens": 0,
+        "reasoning_tokens": 763,
+        "fresh_prompt_tokens": 21,
+        "cost": 0.0055095,
+        "cache_discount": 0.0,
+        "cache_hit": false
+      },
+      "params": {
+        "reasoning_effort": null,
+        "thinking_budget": null,
+        "json_schema": null
+      },
+      "params_label": "",
+      "at": "2026-09-16T15:42:11"
+    }
+  ]
+}

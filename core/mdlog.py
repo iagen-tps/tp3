@@ -4,6 +4,8 @@ Es la evidencia de auditoria de los ejercicios 2 y 3: cuantos prompts hubo,
 que se gasto en cada uno y si hubo cache hits. Por eso el archivo se reescribe
 entero despues de cada turno y no al cerrar la conversacion: si la app se cae,
 lo que ya paso ya esta en disco.
+
+Vive dentro de `chats/<stamp>__slotN__modelo/` junto con `meta.json`.
 """
 import re
 from pathlib import Path
@@ -13,16 +15,23 @@ from core.models import Model
 from core.tokens import estimate
 from core.usage import Usage
 
-LOGS_DIR = Path("logs")
+CHATS_DIR = Path("chats")
+# Alias historico: los tests y el store pueden pasar un dir raiz equivalente.
+LOGS_DIR = CHATS_DIR
 
 
 def _slug(model_id: str) -> str:
     return re.sub(r"[^a-z0-9.-]+", "-", model_id.split("/")[-1].lower())
 
 
-def path_for(conv: Conversation, model: Model, logs_dir: Path = LOGS_DIR) -> Path:
+def dir_for(conv: Conversation, model: Model, chats_dir: Path = CHATS_DIR) -> Path:
     stamp = conv.started_at.strftime("%Y%m%d-%H%M%S")
-    return logs_dir / f"{stamp}__slot{model.slot}__{_slug(model.id)}.md"
+    return chats_dir / f"{stamp}__slot{model.slot}__{_slug(model.id)}"
+
+
+def path_for(conv: Conversation, model: Model, logs_dir: Path = CHATS_DIR) -> Path:
+    """Path del log.md dentro del directorio del chat."""
+    return dir_for(conv, model, logs_dir) / "log.md"
 
 
 def _fence(text: str) -> str:
@@ -103,9 +112,10 @@ def render(conv: Conversation, model: Model) -> str:
     return "\n".join(out) + "\n"
 
 
-def write(conv: Conversation, model: Model, logs_dir: Path = LOGS_DIR) -> Path:
+def write(conv: Conversation, model: Model, logs_dir: Path = CHATS_DIR) -> Path:
     """Reescribe el log completo. Idempotente: mismo estado, mismo archivo."""
-    logs_dir.mkdir(parents=True, exist_ok=True)
-    p = path_for(conv, model, logs_dir)
+    chat_dir = dir_for(conv, model, logs_dir)
+    chat_dir.mkdir(parents=True, exist_ok=True)
+    p = chat_dir / "log.md"
     p.write_text(render(conv, model), encoding="utf-8")
     return p

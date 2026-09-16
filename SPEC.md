@@ -22,7 +22,7 @@ Verificados contra `GET /api/v1/models` el 2026-09-02. Haiku 4.5 **no** soporta
 |---|---|
 | Mostrar el usage después de cada respuesta | barra de lectura bajo cada respuesta + tablero acumulado |
 | Switchear de modelo; el cambio inicia conversación nueva | `selectModel()` confirma y llama a `POST /api/conversations` |
-| Log `.md` por conversación con rol, mensaje y usage | `core/mdlog.py`, reescrito tras cada turno |
+| Log `.md` + metadata por conversación | `chats/<…>/log.md` + `meta.json`, reescritos tras cada turno |
 | Cuatro modelos de proveedores distintos | `core/models.py` |
 
 ## Decisiones
@@ -42,9 +42,10 @@ Si hubiera que volver a pegarlo en cada intento, un espacio de más mata el hit.
 reiniciar el chat al cambiar de modelo. Con el effort por turno, comparar `low` contra
 `high` sobre la misma pregunta queda dentro de un mismo log.
 
-**Sin streaming.** La respuesta viene como un JSON completo con el `usage` adentro.
-Con streaming el usage llegaría recién en el último chunk y habría que parsear SSE en
-las dos puntas a cambio de nada que la consigna pida.
+**Streaming por SSE.** OpenRouter se llama con `stream: true`; el cliente parsea el
+flujo y reenvía eventos `delta` / `done` a la UI. El `usage` viaja en el último chunk
+(antes de `[DONE]`), así que la barra de lectura y el tablero se actualizan al cerrar
+el turno, no token a token.
 
 **`cache_discount` se guarda con signo.** Anthropic cobra la escritura de cache a 1.25×
 el precio de input y la lectura a 0.1×: la primera pasada cuesta *más*. Mostrarlo en
@@ -60,8 +61,8 @@ core/models.py        registry: id, proveedor, slot, caps, pricing
 core/usage.py         Usage: parseo del payload + suma para los totales
 core/conversation.py  Part / Message / TurnParams / Turn / Conversation
 core/client.py        OpenRouter: caps -> parámetros -> HTTP -> (texto, usage)
-core/mdlog.py         escritura del log .md
-core/store.py         conversaciones vivas + bloque estático persistido
+core/mdlog.py         escritura del log .md dentro de chats/
+core/store.py         conversaciones en chats/ (meta.json + log.md) + bloque estático
 core/tokens.py        estimación grosera de tokens (solo para avisos de la UI)
 app/main.py           FastAPI; las rutas validan y delegan
 app/static/           index.html, style.css, app.js
@@ -73,9 +74,10 @@ app/static/           index.html, style.css, app.js
 |---|---|
 | `GET /api/models` | registry serializado: caps, pricing, contexto, mínimo de cache |
 | `GET /api/static-context` · `PUT` | lee y escribe `prompts/static_context.md` |
-| `POST /api/conversations` | `{model_id}` → abre conversación y su log |
+| `GET /api/conversations` | listado para el sidebar (título, modelo, totales) |
+| `POST /api/conversations` | `{model_id}` → abre conversación y su carpeta en `chats/` |
 | `GET /api/conversations/{id}` | historial, totales y contador de prompts |
-| `POST /api/chat` | `{conversation_id, text, params}` → respuesta, usage y totales |
+| `POST /api/chat` | SSE: eventos `delta` (texto) y `done` (usage + estado) |
 
 `params` acepta `reasoning_effort`, `thinking_budget` y `json_schema`. El backend
 descarta lo que el modelo no soporta **antes** de armar el turno, para que el log
@@ -83,8 +85,9 @@ refleje lo que se mandó y no lo que pidió la UI.
 
 ## Formato del log
 
-`logs/<YYYYMMDD-HHMMSS>__slot<N>__<modelo>.md`, reescrito entero después de cada turno
-(no al cerrar: si la app se cae, lo que ya pasó ya está en disco). Contiene front-matter
-con modelo y slot, el bloque estático con su tamaño estimado, y por turno el prompt, la
-respuesta, los parámetros usados y una tabla de usage. El footer trae el contador de
-prompts de usuario y los totales.
+`chats/<YYYYMMDD-HHMMSS>__slot<N>__<modelo>/`, con `log.md` (evidencia de auditoría) y
+`meta.json` (estado reconstruible: turnos, usage, params). El log se reescribe entero
+después de cada turno (no al cerrar: si la app se cae, lo que ya pasó ya está en disco).
+Contiene front-matter con modelo y slot, el bloque estático con su tamaño estimado, y
+por turno el prompt, la respuesta, los parámetros usados y una tabla de usage. El footer
+trae el contador de prompts de usuario y los totales.

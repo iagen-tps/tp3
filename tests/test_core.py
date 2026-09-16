@@ -173,6 +173,8 @@ def test_el_log_registra_prompts_usage_y_totales(tmp_path):
     assert "Cache hit" in md
     assert "-$0.000400" in md                    # el discount negativo, con signo
     assert "7,080" in md and "$0.003240" in md   # totales
+    assert p.name == "log.md"
+    assert p.parent.name.endswith("__slot2__claude-haiku-4.5")
 
 
 def test_el_log_es_idempotente_y_reescribe_completo(tmp_path):
@@ -182,14 +184,15 @@ def test_el_log_es_idempotente_y_reescribe_completo(tmp_path):
     primero = mdlog.write(c, HAIKU, logs_dir=tmp_path).read_text()
     segundo = mdlog.write(c, HAIKU, logs_dir=tmp_path).read_text()
     assert primero == segundo
-    assert len(list(tmp_path.iterdir())) == 1
+    assert len([d for d in tmp_path.iterdir() if d.is_dir()]) == 1
 
 
 def test_el_nombre_del_log_identifica_slot_y_modelo(tmp_path):
     from core import mdlog
 
     p = mdlog.path_for(Conversation(model_id=DEEPSEEK.id), DEEPSEEK, logs_dir=tmp_path)
-    assert p.name.endswith("__slot4__deepseek-v4-flash-0731.md")
+    assert p.name == "log.md"
+    assert p.parent.name.endswith("__slot4__deepseek-v4-flash-0731")
 
 
 def test_el_bloque_estatico_con_backticks_no_rompe_el_log(tmp_path):
@@ -200,13 +203,23 @@ def test_el_bloque_estatico_con_backticks_no_rompe_el_log(tmp_path):
     assert "````text" in md      # la valla se alarga para envolver el ejemplo
 
 
-def test_abrir_una_conversacion_no_escribe_log_hasta_el_primer_turno(tmp_path):
+def test_abrir_una_conversacion_escribe_meta_pero_no_log_hasta_el_primer_turno(tmp_path):
     from core.store import Store
 
-    s = Store(logs_dir=tmp_path)
+    s = Store(chats_dir=tmp_path)
     conv = s.new(HAIKU, "EL CONTRATO")
-    assert conv.log_path                       # el path ya se conoce
-    assert not list(tmp_path.glob("*.md"))     # pero el archivo todavia no existe
+    assert conv.log_path and conv.chat_dir
+    chat_dir = Path(conv.chat_dir)
+    assert (chat_dir / "meta.json").exists()
+    assert not (chat_dir / "log.md").exists()
 
     s.record(conv, HAIKU, "p1", "r1", Usage(10, 5, cost=0.001), TurnParams())
-    assert [p.name for p in tmp_path.glob("*.md")] == [Path(conv.log_path).name]
+    assert (chat_dir / "log.md").exists()
+    meta = (chat_dir / "meta.json").read_text(encoding="utf-8")
+    assert '"prompt_count": 1' in meta
+
+
+def test_build_body_incluye_stream_false_por_defecto():
+    body = build_body(DEEPSEEK, [Message.of("user", "hola")], TurnParams())
+    assert body["stream"] is False
+    assert build_body(DEEPSEEK, [Message.of("user", "hola")], TurnParams(), stream=True)["stream"] is True

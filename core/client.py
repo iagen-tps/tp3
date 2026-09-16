@@ -3,8 +3,14 @@
 Todo lo especifico de cada proveedor esta aca. El resto del sistema habla en
 terminos de `Part` y `TurnParams` y no sabe que Anthropic necesita bloques ni
 que OpenAI usa `reasoning.effort`.
+
+El modo por defecto es streaming (SSE): la UI recibe deltas a medida que el
+modelo genera, y el `usage` llega en el ultimo chunk antes de `[DONE]`.
 """
+import json
 import os
+from collections.abc import Iterator
+from typing import Any
 
 import httpx
 
@@ -46,7 +52,9 @@ def render_message(msg: Message, model: Model) -> dict:
     return {"role": msg.role, "content": blocks}
 
 
-def build_body(model: Model, messages: list[Message], params: TurnParams) -> dict:
+def build_body(
+    model: Model, messages: list[Message], params: TurnParams, *, stream: bool = False
+) -> dict:
     """Arma el body del request descartando lo que el modelo no soporta."""
     body: dict = {
         "model": model.id,
@@ -54,6 +62,7 @@ def build_body(model: Model, messages: list[Message], params: TurnParams) -> dic
         # OpenRouter incluye el usage igual; pedirlo explicitamente garantiza
         # que venga el campo `cost` ya calculado en USD.
         "usage": {"include": True},
+        "stream": stream,
     }
 
     reasoning: dict = {}
@@ -78,6 +87,14 @@ def build_body(model: Model, messages: list[Message], params: TurnParams) -> dic
     return body
 
 
+def _delta_text(chunk: dict) -> str:
+    choices = chunk.get("choices") or []
+    if not choices:
+        return ""
+    delta = choices[0].get("delta") or {}
+    return delta.get("content") or ""
+
+
 class OpenRouterClient:
     def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
@@ -94,27 +111,69 @@ class OpenRouterClient:
             h["X-Title"] = title
         return h
 
-    def complete(
+    def stream(
         self, model: Model, messages: list[Message], params: TurnParams
-    ) -> tuple[str, Usage, dict]:
-        """Devuelve (texto de la respuesta, usage, body enviado)."""
-        body = build_body(model, messages, params)
+    ) -> Iterator[tuple[str, Any]]:
+        """Genera eventos `("delta", str)` y al final `("usage", Usage)`.
+
+        OpenRouter manda el usage en el ultimo chunk SSE, justo antes de
+        `data: [DONE]`. Los comentarios SSE (lineas que empiezan con `:`) se
+        ignoran.
+        """
+        body = build_body(model, messages, params, stream=True)
         try:
-            r = httpx.post(API_URL, headers=self._headers(), json=body, timeout=TIMEOUT)
+            with httpx.stream(
+                "POST", API_URL, headers=self._headers(), json=body, timeout=TIMEOUT
+            ) as r:
+                if r.status_code >= 400:
+                    # Hay que leer el cuerpo antes de armar el error: con stream
+                    # no viene parseado.
+                    raw = r.read().decode("utf-8", errors="replace")
+                    try:
+                        data = json.loads(raw)
+                        msg = (data.get("error") or {}).get("message") or raw[:300]
+                    except ValueError:
+                        msg = raw[:300]
+                    raise OpenRouterError(f"OpenRouter respondio {r.status_code}: {msg}")
+
+                usage: Usage | None = None
+                for line in r.iter_lines():
+                    if not line or line.startswith(":"):
+                        continue
+                    if not line.startswith("data: "):
+                        continue
+                    payload = line[6:].strip()
+                    if payload == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(payload)
+                    except ValueError:
+                        continue
+                    if err := chunk.get("error"):
+                        msg = err.get("message") if isinstance(err, dict) else str(err)
+                        raise OpenRouterError(f"OpenRouter mid-stream: {msg}")
+                    if chunk.get("usage"):
+                        usage = Usage.from_payload(chunk["usage"])
+                    text = _delta_text(chunk)
+                    if text:
+                        yield ("delta", text)
+
+                if usage is None:
+                    usage = Usage()
+                yield ("usage", usage)
         except httpx.HTTPError as e:
             raise OpenRouterError(f"No se pudo llegar a OpenRouter: {e}") from e
 
-        try:
-            data = r.json()
-        except ValueError:
-            raise OpenRouterError(f"Respuesta no-JSON (HTTP {r.status_code}): {r.text[:300]}") from None
-
-        if r.status_code >= 400 or "error" in data:
-            msg = (data.get("error") or {}).get("message") or r.text[:300]
-            raise OpenRouterError(f"OpenRouter respondio {r.status_code}: {msg}")
-
-        choices = data.get("choices") or []
-        if not choices:
-            raise OpenRouterError(f"Respuesta sin choices: {str(data)[:300]}")
-        text = (choices[0].get("message") or {}).get("content") or ""
-        return text, Usage.from_payload(data.get("usage")), body
+    def complete(
+        self, model: Model, messages: list[Message], params: TurnParams
+    ) -> tuple[str, Usage, dict]:
+        """Compat: acumula el stream y devuelve (texto, usage, body enviado)."""
+        body = build_body(model, messages, params, stream=True)
+        parts: list[str] = []
+        usage = Usage()
+        for kind, value in self.stream(model, messages, params):
+            if kind == "delta":
+                parts.append(value)
+            elif kind == "usage":
+                usage = value
+        return "".join(parts), usage, body

@@ -1,9 +1,10 @@
 """API del chat. Las rutas son finitas: validan y delegan al core."""
+import json
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -46,12 +47,19 @@ def _conv_state(conv) -> dict:
     return {
         "id": conv.id,
         "model_id": conv.model_id,
+        "chat_dir": conv.chat_dir,
         "log_path": conv.log_path,
         "prompt_count": conv.prompt_count,
         "totals": conv.totals.as_dict(),
         "static_context": conv.static_context,
         "static_context_tokens": estimate(conv.static_context),
+        "started_at": conv.started_at.isoformat(timespec="seconds"),
+        "title": store.title_of(conv),
     }
+
+
+def _sse(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
 # --- requests -------------------------------------------------------------
@@ -95,6 +103,11 @@ def put_static_context(body: StaticContext):
     return {"text": body.text, "tokens": estimate(body.text)}
 
 
+@app.get("/api/conversations")
+def list_conversations():
+    return {"conversations": STORE.list_summaries()}
+
+
 @app.post("/api/conversations")
 def create_conversation(body: NewConversation):
     model = _model_or_404(body.model_id)
@@ -122,10 +135,23 @@ def get_conversation(conversation_id: str):
     }
 
 
+@app.delete("/api/conversations/{conversation_id}")
+def delete_conversation(conversation_id: str):
+    _conversation_or_404(conversation_id)
+    STORE.delete(conversation_id)
+    return {"ok": True}
+
+
 @app.post("/api/chat")
 def chat(body: ChatRequest):
+    """Streamea la respuesta vía SSE: `delta` → `done` (o `error`).
+
+    El cliente no espera el JSON completo: cada token llega como evento y el
+    usage/metadata viajan en el `done` final, cuando OpenRouter cierra el stream.
+    """
     conv = _conversation_or_404(body.conversation_id)
     model = _model_or_404(conv.model_id)
+    client = _client()
 
     # Descartamos lo que el modelo no soporta antes de armar el turno, para que
     # el log refleje lo que realmente se mando y no lo que pidio la UI.
@@ -136,16 +162,39 @@ def chat(body: ChatRequest):
         json_schema=p.json_schema if model.has(Cap.STRUCTURED_OUTPUT) else None,
     )
 
-    try:
-        reply, usage, _ = _client().complete(model, conv.outbound_messages(body.text), params)
-    except OpenRouterError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
+    def events():
+        parts: list[str] = []
+        try:
+            for kind, value in client.stream(
+                model, conv.outbound_messages(body.text), params
+            ):
+                if kind == "delta":
+                    parts.append(value)
+                    yield _sse("delta", {"text": value})
+                elif kind == "usage":
+                    reply = "".join(parts)
+                    turn = STORE.record(conv, model, body.text, reply, value, params)
+                    yield _sse("done", {
+                        "turn": {
+                            "n": turn.n,
+                            "reply": reply,
+                            "usage": value.as_dict(),
+                            "params_label": params.label(),
+                        },
+                        **_conv_state(conv),
+                    })
+        except OpenRouterError as e:
+            yield _sse("error", {"detail": str(e)})
 
-    turn = STORE.record(conv, model, body.text, reply, usage, params)
-    return {
-        "turn": {"n": turn.n, "reply": reply, "usage": usage.as_dict(), "params_label": params.label()},
-        **_conv_state(conv),
-    }
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.get("/")

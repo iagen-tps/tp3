@@ -1,0 +1,42 @@
+{
+  "id": "f43a7eb7bcc9",
+  "model_id": "anthropic/claude-haiku-4.5",
+  "started_at": "2026-09-16T15:40:49",
+  "static_context": "",
+  "prompt_count": 1,
+  "totals": {
+    "prompt_tokens": 23,
+    "completion_tokens": 412,
+    "cached_tokens": 0,
+    "reasoning_tokens": 0,
+    "fresh_prompt_tokens": 23,
+    "cost": 0.002083,
+    "cache_discount": 0.0,
+    "cache_hit": false
+  },
+  "title": "Prueba Claude.",
+  "turns": [
+    {
+      "n": 1,
+      "prompt": "Prueba Claude.\n\nListar 20 emperadores de roma",
+      "reply": "# 20 Emperadores de Roma\n\n1. **Augusto** (27 a.C. - 14 d.C.)\n2. **Tiberio** (14 - 37 d.C.)\n3. **Calígula** (37 - 41 d.C.)\n4. **Claudio** (41 - 54 d.C.)\n5. **Nerón** (54 - 68 d.C.)\n6. **Galba** (68 - 69 d.C.)\n7. **Otón** (69 d.C.)\n8. **Vitelio** (69 d.C.)\n9. **Vespasiano** (69 - 79 d.C.)\n10. **Tito** (79 - 81 d.C.)\n11. **Domiciano** (81 - 96 d.C.)\n12. **Nerva** (96 - 98 d.C.)\n13. **Trajano** (98 - 117 d.C.)\n14. **Adriano** (117 - 138 d.C.)\n15. **Antonino Pío** (138 - 161 d.C.)\n16. **Marco Aurelio** (161 - 180 d.C.)\n17. **Cómodo** (180 - 192 d.C.)\n18. **Pertinax** (193 d.C.)\n19. **Didio Juliano** (193 d.C.)\n20. **Septimio Severo** (193 - 211 d.C.)\n\n¿Te gustaría información sobre alguno en particular?",
+      "usage": {
+        "prompt_tokens": 23,
+        "completion_tokens": 412,
+        "cached_tokens": 0,
+        "reasoning_tokens": 0,
+        "fresh_prompt_tokens": 23,
+        "cost": 0.002083,
+        "cache_discount": 0.0,
+        "cache_hit": false
+      },
+      "params": {
+        "reasoning_effort": null,
+        "thinking_budget": null,
+        "json_schema": null
+      },
+      "params_label": "",
+      "at": "2026-09-16T15:41:37"
+    }
+  ]
+}

@@ -4,71 +4,101 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Medidor · chat multi-modelo</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/static/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
 </head>
 <body>
 
-<header class="bar bar--top">
-  <div class="brand">
+<aside class="rail rail--chats" aria-label="Conversaciones">
+  <div class="rail__brand">
     <span class="brand__mark" aria-hidden="true"></span>
     <h1 class="brand__name">Medidor</h1>
   </div>
-
-  <div class="picker">
-    <button class="picker__trigger" id="model-trigger" aria-haspopup="listbox" aria-expanded="false">
-      <span class="picker__slot" id="model-slot">—</span>
-      <span class="picker__text">
-        <span class="picker__label" id="model-label">Cargando…</span>
-        <span class="picker__meta" id="model-meta"></span>
-      </span>
-      <span class="picker__caret" aria-hidden="true"></span>
-    </button>
-    <div class="picker__menu" id="model-menu" role="listbox" hidden></div>
-  </div>
-
-  <div class="knobs" id="knobs"></div>
-</header>
-
-<section class="prefix" id="prefix">
-  <button class="prefix__toggle" id="prefix-toggle" aria-expanded="false" aria-controls="prefix-body">
-    <span class="prefix__caret" aria-hidden="true"></span>
-    <span class="prefix__title">Contexto estático</span>
-    <span class="prefix__hint" id="prefix-hint">el prefijo que se cachea</span>
-    <span class="gauge" id="prefix-gauge" hidden>
-      <span class="gauge__fill" id="prefix-fill"></span>
-    </span>
-    <span class="prefix__count mono" id="prefix-count">0 tok</span>
-  </button>
-  <div class="prefix__body" id="prefix-body" hidden>
-    <p class="prefix__note" id="prefix-note"></p>
-    <textarea id="prefix-text" spellcheck="false"
-      placeholder="El contrato, las instrucciones y los ejemplos. Va idéntico al principio de cada conversación: es lo que el proveedor puede cachear."></textarea>
-    <div class="prefix__actions">
-      <span class="prefix__saved" id="prefix-saved" aria-live="polite"></span>
-      <button class="btn btn--ghost" id="prefix-save">Guardar prefijo</button>
+  <div class="rail__head">
+    <span class="rail__title">Chats</span>
+    <div class="new-wrap">
+      <button class="btn btn--ghost btn--new" id="new-chat" type="button" aria-haspopup="menu" aria-expanded="false">Nuevo</button>
+      <div class="new-menu" id="new-menu" role="menu" hidden></div>
     </div>
   </div>
-</section>
+  <nav class="chat-list" id="chat-list"></nav>
+</aside>
 
-<main class="thread" id="thread" aria-live="polite"></main>
+<div class="stage">
+  <main class="thread" id="thread" aria-live="polite"></main>
 
-<form class="composer" id="composer">
-  <textarea id="input" rows="1" placeholder="Escribí tu prompt — Enter envía, Shift+Enter salta línea" required></textarea>
-  <button class="btn btn--send" id="send" type="submit">Enviar</button>
-</form>
+  <form class="composer" id="composer">
+    <textarea id="input" rows="1" placeholder="Escribí tu prompt — Enter envía, Shift+Enter salta línea" required></textarea>
+    <select class="composer__effort" id="effort" hidden aria-label="Reasoning effort"></select>
+    <button class="btn btn--send" id="send" type="submit">Enviar</button>
+  </form>
+</div>
 
-<footer class="bar bar--meter" id="meter">
-  <span class="meter__cell"><b class="mono" id="t-prompts">0</b> <i>prompts</i></span>
-  <span class="meter__cell"><b class="mono" id="t-in">0</b> <i>entrada</i></span>
-  <span class="meter__cell meter__cell--cache"><b class="mono" id="t-cached">0</b> <i>cacheados</i></span>
-  <span class="meter__cell"><b class="mono" id="t-out">0</b> <i>salida</i></span>
-  <span class="meter__cell"><b class="mono" id="t-reason">0</b> <i>razonamiento</i></span>
-  <span class="meter__cell meter__cell--cost"><b class="mono" id="t-cost">$0</b> <i>acumulado</i></span>
-  <a class="meter__log mono" id="t-log" title="Log de esta conversación"></a>
-</footer>
+<aside class="rail rail--meter" id="meter" aria-label="Configuración y métricas">
+  <div class="meter__top">
+    <section class="meter__block">
+      <span class="meter__label">Modelo</span>
+      <div class="picker picker--rail">
+        <button class="picker__trigger" id="model-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="picker__logo" id="model-logo" aria-hidden="true"></span>
+          <span class="picker__text">
+            <span class="picker__label" id="model-label">Cargando…</span>
+            <span class="picker__meta" id="model-meta"></span>
+          </span>
+          <span class="picker__caret" aria-hidden="true"></span>
+        </button>
+        <div class="picker__menu" id="model-menu" role="listbox" hidden></div>
+      </div>
+      <div class="knobs knobs--rail" id="knobs"></div>
+    </section>
+  </div>
+
+  <div class="meter__body">
+    <section class="prefix prefix--rail" id="prefix">
+      <button class="prefix__toggle" id="prefix-toggle" aria-expanded="false" aria-controls="prefix-body">
+        <span class="prefix__caret" aria-hidden="true"></span>
+        <span class="prefix__title">Contexto estático</span>
+        <span class="prefix__count mono" id="prefix-count">0 tok</span>
+      </button>
+      <p class="prefix__hint" id="prefix-hint">el prefijo que se cachea</p>
+      <span class="gauge" id="prefix-gauge" hidden>
+        <span class="gauge__fill" id="prefix-fill"></span>
+      </span>
+      <div class="prefix__body" id="prefix-body" hidden>
+        <p class="prefix__note" id="prefix-note"></p>
+        <textarea id="prefix-text" spellcheck="false"
+          placeholder="El contrato, las instrucciones y los ejemplos. Va idéntico al principio de cada conversación: es lo que el proveedor puede cachear."></textarea>
+        <div class="prefix__actions">
+          <span class="prefix__saved" id="prefix-saved" aria-live="polite"></span>
+          <button class="btn btn--ghost" id="prefix-save">Guardar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="meter__block">
+      <span class="meter__label">Conversación</span>
+      <p class="meter__title" id="m-title">—</p>
+      <p class="meter__path mono" id="m-path"></p>
+    </section>
+
+    <dl class="meter__grid">
+      <div class="meter__cell"><dt>prompts</dt><dd class="mono" id="t-prompts">0</dd></div>
+      <div class="meter__cell"><dt>entrada</dt><dd class="mono" id="t-in">0</dd></div>
+      <div class="meter__cell meter__cell--cache"><dt>cacheados</dt><dd class="mono" id="t-cached">0</dd></div>
+      <div class="meter__cell"><dt>salida</dt><dd class="mono" id="t-out">0</dd></div>
+      <div class="meter__cell"><dt>razonamiento</dt><dd class="mono" id="t-reason">0</dd></div>
+      <div class="meter__cell meter__cell--cost"><dt>acumulado</dt><dd class="mono" id="t-cost">$0</dd></div>
+    </dl>
+    <a class="meter__log mono" id="t-log" title="Log de esta conversación"></a>
+  </div>
+</aside>
 
 <script src="/static/app.js"></script>
 </body>

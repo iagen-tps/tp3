@@ -34,6 +34,19 @@ class Usage:
             cache_discount=float(u.get("cache_discount") or 0.0),
         )
 
+    @classmethod
+    def from_dict(cls, d: dict | None) -> "Usage":
+        """Rehidrata un usage guardado en meta.json (no el payload de OpenRouter)."""
+        u = d or {}
+        return cls(
+            prompt_tokens=int(u.get("prompt_tokens") or 0),
+            completion_tokens=int(u.get("completion_tokens") or 0),
+            cached_tokens=int(u.get("cached_tokens") or 0),
+            reasoning_tokens=int(u.get("reasoning_tokens") or 0),
+            cost=float(u.get("cost") or 0.0),
+            cache_discount=float(u.get("cache_discount") or 0.0),
+        )
+
     @property
     def fresh_prompt_tokens(self) -> int:
         """Tokens de entrada que efectivamente se reprocesaron (no vinieron del cache)."""

@@ -124,6 +124,7 @@ def as_dict(m: Model) -> dict:
         "caps": sorted(m.caps),
         "efforts": list(m.efforts),
         "min_cache_tokens": m.min_cache_tokens,
+        "logo": f"/static/logos/{m.provider.lower()}.svg",
         "pricing_per_million": {
             "prompt": m.pricing.per_million("prompt"),
             "completion": m.pricing.per_million("completion"),

@@ -1,0 +1,42 @@
+{
+  "id": "fea38cfadb5d",
+  "model_id": "openai/gpt-5.6-luna",
+  "started_at": "2026-09-16T15:40:28",
+  "static_context": "",
+  "prompt_count": 1,
+  "totals": {
+    "prompt_tokens": 27,
+    "completion_tokens": 1746,
+    "cached_tokens": 0,
+    "reasoning_tokens": 907,
+    "fresh_prompt_tokens": 27,
+    "cost": 0.0021006,
+    "cache_discount": 0.0,
+    "cache_hit": false
+  },
+  "title": "Prueba chat GPT 5.6,",
+  "turns": [
+    {
+      "n": 1,
+      "prompt": "Prueba chat GPT 5.6,\n\nlistado de 20 mejores invenciones de 2018",
+      "reply": "Aquí tienes una selección de **20 invenciones e innovaciones destacadas de 2018**. No existe un ranking universal de “las mejores”, por lo que la lista combina impacto científico, tecnológico y social.\n\n1. **Google Duplex** – Sistema de inteligencia artificial capaz de realizar llamadas telefónicas y reservar citas mediante conversación natural.\n\n2. **Primer teléfono plegable comercial** – El **Royole FlexPai** fue presentado en 2018 y se considera el primer teléfono inteligente plegable disponible comercialmente.\n\n3. **Despliegue inicial de redes 5G** – En 2018 comenzaron las primeras implementaciones comerciales de 5G, especialmente en Corea del Sur y Estados Unidos.\n\n4. **Waymo One** – Primer servicio comercial de transporte autónomo con vehículos sin conductor de seguridad en algunas operaciones, lanzado en Arizona.\n\n5. **AlphaFold** – El sistema de DeepMind logró avances importantes en la predicción de estructuras tridimensionales de proteínas.\n\n6. **AlterEgo** – Interfaz desarrollada por el MIT que permite controlar dispositivos mediante señales neuromusculares asociadas al habla silenciosa.\n\n7. **Project Debater de IBM** – Sistema de inteligencia artificial diseñado para debatir con seres humanos utilizando argumentos y grandes volúmenes de información.\n\n8. **Primer prototipo de vivienda impresa en 3D por ICON** – La empresa presentó una casa fabricada con impresión 3D, orientada a reducir costes y tiempos de construcción.\n\n9. **Aibo de Sony** – Regresó el perro robot doméstico de Sony, equipado con inteligencia artificial, reconocimiento facial y aprendizaje de hábitos.\n\n10. **Boeing eVTOL autónomo** – Boeing probó con éxito un prototipo de vehículo aéreo eléctrico autónomo, precursor de los taxis aéreos.\n\n11. **Robot Dactyl de OpenAI** – Sistema robótico que aprendió a manipular un cubo con una mano robótica mediante aprendizaje automático.\n\n12. **Google Bristlecone** – Procesador cuántico experimental de 72 cúbits, diseñado para avanzar hacia la computación cuántica tolerante a errores.\n\n13. **Project Natick de Microsoft** – Centro de datos submarino experimental, instalado frente a las costas de Escocia para estudiar nuevas formas de refrigeración y eficiencia energética.\n\n14. **Parker Solar Probe** – Sonda espacial de la NASA diseñada para acercarse al Sol más que cualquier misión anterior y estudiar su corona.\n\n15. **Falcon 9 Block 5 de SpaceX** – Versión mejorada y reutilizable del cohete Falcon 9, que permitió aumentar la frecuencia y reducir el coste de los lanzamientos.\n\n16. **Nuevas técnicas de edición genética CRISPR** – En 2018 se produjeron avances importantes en edición genética y se anunció el polémico nacimiento de bebés modificados genéticamente, aunque este caso fue ampliamente condenado por razones éticas y científicas.\n\n17. **Diagnóstico médico mediante inteligencia artificial** – El sistema IDx-DR se convirtió en uno de los primeros dispositivos autorizados para detectar automáticamente la retinopatía diabética sin intervención directa de un especialista.\n\n18. **Avances en órganos y tejidos artificiales** – Se desarrollaron nuevos tejidos impresos en 3D y modelos celulares destinados a la investigación médica y la medicina regenerativa.\n\n19. **Primer puente metálico impreso en 3D de gran escala** – Se presentaron avances importantes del puente de acero construido mediante impresión 3D en Ámsterdam, dentro de un proyecto de fabricación robótica.\n\n20. **Baterías de estado sólido experimentales** – En 2018 aumentó la investigación y presentación de prototipos de baterías con electrolitos sólidos, consideradas una alternativa más segura y con mayor densidad energética que las baterías de ion-litio convencionales.\n\n**Nota:** muchas de estas tecnologías no fueron “inventadas desde cero” en 2018, sino que ese año fueron presentadas, comercializadas o alcanzaron un avance decisivo.",
+      "usage": {
+        "prompt_tokens": 27,
+        "completion_tokens": 1746,
+        "cached_tokens": 0,
+        "reasoning_tokens": 907,
+        "fresh_prompt_tokens": 27,
+        "cost": 0.0021006,
+        "cache_discount": 0.0,
+        "cache_hit": false
+      },
+      "params": {
+        "reasoning_effort": null,
+        "thinking_budget": null,
+        "json_schema": null
+      },
+      "params_label": "",
+      "at": "2026-09-16T15:41:11"
+    }
+  ]
+}

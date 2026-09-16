@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Medidor">
+  <rect width="32" height="32" rx="7" fill="#ECEDEF"/>
+  <!-- aguja del medidor -->
+  <path fill="#3B2FD0" d="M13 4 L19 6.5 L19 25.5 L13 28 Z"/>
+</svg>

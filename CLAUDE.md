@@ -24,8 +24,9 @@ Los tests de la cátedra son aparte y se corren con `vida.py` al lado:
 - **Todo lo específico de un proveedor vive en `core/client.py`.** Si aparece un
   `if model.id == ...` fuera de `core/models.py`, es una capacidad que falta declarar
   en el registry.
-- **Los logs de `logs/` son parte de la entrega.** No los borres ni los edites a mano:
-  son la evidencia de auditoría. Si un log está mal, la corrida se rehace.
+- **Los chats de `chats/` son parte de la entrega** (`log.md` + `meta.json`). No los
+  borres ni los edites a mano: son la evidencia de auditoría. Si un log está mal, la
+  corrida se rehace. `chats/` no va en `.gitignore`.
 - **El bloque estático de `prompts/` no se toca entre intentos del ejercicio 2.**
   Cambiarlo rompe el prefijo y con él el cache hit que hay que demostrar.
 

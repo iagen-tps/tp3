@@ -81,6 +81,7 @@ class Conversation:
     started_at: datetime = field(default_factory=datetime.now)
     history: list[Message] = field(default_factory=list)
     turns: list[Turn] = field(default_factory=list)
+    chat_dir: str | None = None
     log_path: str | None = None
 
     @property
