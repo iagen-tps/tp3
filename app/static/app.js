@@ -295,11 +295,73 @@ marked.setOptions({
   breaks: true,
 });
 
+const COPY_ICON = `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>`;
+const CHECK_ICON = `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+
 function renderBody(text) {
   const raw = marked.parse(text ?? "", { async: false });
   return DOMPurify.sanitize(raw, {
     USE_PROFILES: { html: true },
+    ADD_ATTR: ["class"],
   });
+}
+
+function enhanceCodeBlocks(root) {
+  root.querySelectorAll("pre").forEach((pre) => {
+    if (pre.parentElement?.classList.contains("code-block")) return;
+
+    const code = pre.querySelector("code") || pre;
+    if (window.hljs) {
+      try {
+        hljs.highlightElement(code);
+      } catch {
+        /* idioma desconocido o bloque incompleto durante el stream */
+      }
+    }
+
+    const wrap = document.createElement("div");
+    wrap.className = "code-block";
+    pre.replaceWith(wrap);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "code-block__copy";
+    btn.title = "Copiar";
+    btn.setAttribute("aria-label", "Copiar código");
+    btn.innerHTML = COPY_ICON;
+    btn.addEventListener("click", async () => {
+      const text = code.textContent ?? "";
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.append(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+      btn.classList.add("is-copied");
+      btn.innerHTML = CHECK_ICON;
+      btn.title = "Copiado";
+      wrap.classList.remove("is-shining");
+      void wrap.offsetWidth; // reinicia la animación si se copia otra vez
+      wrap.classList.add("is-shining");
+      setTimeout(() => {
+        btn.classList.remove("is-copied");
+        btn.innerHTML = COPY_ICON;
+        btn.title = "Copiar";
+        wrap.classList.remove("is-shining");
+      }, 1400);
+    });
+
+    wrap.append(btn, pre);
+  });
+}
+
+function mountMarkdown(el, text) {
+  el.innerHTML = renderBody(text);
+  enhanceCodeBlocks(el);
 }
 
 function messageEl(role, text, params) {
@@ -316,7 +378,7 @@ function messageEl(role, text, params) {
   }
   const body = document.createElement("div");
   body.className = "msg__body";
-  if (role === "assistant") body.innerHTML = renderBody(text);
+  if (role === "assistant") mountMarkdown(body, text);
   else body.textContent = text;
   el.append(who, body);
   return el;
@@ -393,6 +455,19 @@ function updateMeter() {
 const scrollDown = () => { $("thread").scrollTop = $("thread").scrollHeight; };
 const focusInput = () => { $("input").focus(); };
 
+function chatIdFromUrl() {
+  return new URLSearchParams(location.search).get("chat");
+}
+
+function syncUrl(chatId) {
+  const url = new URL(location.href);
+  if (chatId) url.searchParams.set("chat", chatId);
+  else url.searchParams.delete("chat");
+  const next = `${url.pathname}${url.search}${url.hash}`;
+  if (`${location.pathname}${location.search}${location.hash}` === next) return;
+  history.replaceState({ chat: chatId }, "", next);
+}
+
 /* ---- conversacion ------------------------------------------------------ */
 
 async function newConversation() {
@@ -401,6 +476,7 @@ async function newConversation() {
   thread().append(renderCut());
   updateMeter();
   await refreshChatList();
+  syncUrl(state.conversation.id);
   focusInput();
 }
 
@@ -445,6 +521,7 @@ async function startChatWithModel(m) {
 async function openConversation(id) {
   if (state.busy) return;
   if (id === state.conversation?.id) {
+    syncUrl(id);
     focusInput();
     return;
   }
@@ -461,6 +538,7 @@ async function openConversation(id) {
   renderThreadFromTurns(data.turns || []);
   updateMeter();
   renderChatList();
+  syncUrl(id);
   focusInput();
 }
 
@@ -520,7 +598,7 @@ async function send(text) {
     await readSSE(r, (event, data) => {
       if (event === "delta") {
         reply += data.text;
-        bodyEl.innerHTML = renderBody(reply);
+        mountMarkdown(bodyEl, reply);
         scrollDown();
       } else if (event === "done") {
         finished = true;
@@ -530,7 +608,7 @@ async function send(text) {
           p.textContent = data.turn.params_label;
           assistant.querySelector(".msg__who").append(p);
         }
-        bodyEl.innerHTML = renderBody(data.turn.reply);
+        mountMarkdown(bodyEl, data.turn.reply);
         inner.append(readingEl(data.turn.usage));
         state.conversation = { ...state.conversation, ...data };
         updateMeter();
@@ -645,7 +723,10 @@ function wire() {
   setPrefixCount(ctx.tokens);
 
   await refreshChatList();
-  if (state.chats.length) {
+  const fromUrl = chatIdFromUrl();
+  if (fromUrl && state.chats.some((c) => c.id === fromUrl)) {
+    await openConversation(fromUrl);
+  } else if (state.chats.length) {
     await openConversation(state.chats[0].id);
   } else {
     await newConversation();
