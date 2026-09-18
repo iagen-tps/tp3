@@ -1,0 +1,42 @@
+{
+  "id": "0ad4ea1b03b5",
+  "model_id": "deepseek/deepseek-v4-flash-0731",
+  "started_at": "2026-09-18T01:31:37",
+  "static_context": "TP3 — Especificación estable del programa vida.py para el ejercicio 2.\n\nROL\nActuá como desarrollador de Python especializado en simulaciones discretas y programas de línea de comandos. Tu tarea es producir una implementación correcta y legible de la siguiente especificación completa.\n\nCONTEXTO\nEl producto es un único script vida.py que simula el juego de la vida de Conway sobre una grilla rectangular FINITA. El programa se ejecutará en un proceso separado para cada prueba. No existe una interfaz interactiva ni un tablero infinito: las dimensiones de entrada se conservan durante todas las generaciones.\n\nCONTRATO DE ENTRADA Y SALIDA\nInvocación: python3 vida.py <archivo_estado_inicial> <generaciones>.\nEl primer argumento es la ruta de un archivo de texto UTF-8. Contiene una fila por línea, todas del mismo ancho, usando únicamente # para una célula viva y . para una célula muerta. El archivo puede terminar con un salto de línea o carecer de él. El segundo argumento es un entero no negativo N, la cantidad exacta de generaciones a simular.\nLa salida por stdout contiene SOLO la grilla resultante: igual cantidad de filas y columnas, una línea por fila, usando # y . sin espacios. Se permite un salto de línea al final. No imprimas títulos, generaciones intermedias, estadísticas, mensajes de ayuda ni explicaciones en stdout. Para N = 0 imprimí el estado inicial sin cambiar las células, las dimensiones ni su orden.\n\nREGLAS DE TRANSICIÓN\nCada célula tiene hasta ocho vecinas: horizontal, vertical y diagonalmente adyacentes. No se cuenta a sí misma. Todas las posiciones fuera de la grilla están muertas: SIN wrap-around, SIN índices negativos que conecten los bordes y SIN expandir el tablero.\nUna célula viva sobrevive si tiene exactamente dos o tres vecinas vivas; con cualquier otro número muere (soledad o sobrepoblación). Una célula muerta nace si tiene exactamente tres vecinas vivas; en todos los demás casos permanece muerta.\nCada generación es simultánea: calculá TODAS las células siguientes a partir de la grilla anterior. No actualices en el mismo tablero mientras contás vecinas. Repetí la transición exactamente N veces.\n\nINSTRUCCIONES\nLeé los dos argumentos, cargá la grilla, calculá el resultado y escribilo. Incluí un punto de entrada que ejecute el programa al invocarlo como script. Conservá filas y columnas incluso cuando todas las células estén muertas. El algoritmo debe funcionar para grillas rectangulares, no solamente cuadradas; deben funcionar grillas de una fila o una columna. La complejidad esperada es O(N * filas * columnas) y la memoria O(filas * columnas).\nAntes de emitir la respuesta, verificá mentalmente las reglas, la simultaneidad, los bordes y los ejemplos. Los ejemplos son casos del algoritmo general; no los hardcodees.\n\nRESTRICCIONES\nSolo biblioteca estándar de Python 3. Sin dependencias externas, acceso a red, comandos de shell, archivos auxiliares ni animaciones. No modifiques el archivo de entrada. No se pide instalar paquetes ni ejecutar tests desde el script. Si implementás validación de argumentos o del archivo, los errores van a stderr y producen un código de salida distinto de cero; no alteres el comportamiento de entradas válidas.\n\nEJEMPLOS DE ACEPTACIÓN\nCada bloque Entrada representa el contenido completo del archivo. N es el segundo argumento. Salida es el stdout esperado, ignorando únicamente un salto de línea final.\n\n1. Generación cero.\nEntrada:\n.....\n..#..\n..#..\n..#..\n.....\nN: 0\nSalida:\n.....\n..#..\n..#..\n..#..\n.....\n\n2. Blinker de vertical a horizontal.\nEntrada:\n.....\n..#..\n..#..\n..#..\n.....\nN: 1\nSalida:\n.....\n.....\n.###.\n.....\n.....\n\n3. Blinker vuelve al estado original.\nEntrada:\n.....\n..#..\n..#..\n..#..\n.....\nN: 2\nSalida:\n.....\n..#..\n..#..\n..#..\n.....\n\n4. Bloque estable.\nEntrada:\n....\n.##.\n.##.\n....\nN: 5\nSalida:\n....\n.##.\n.##.\n....\n\n5. Célula sola muere por soledad.\nEntrada:\n...\n.#.\n...\nN: 1\nSalida:\n...\n...\n...\n\n6. Grilla vacía sigue vacía.\nEntrada:\n....\n....\n....\n....\nN: 3\nSalida:\n....\n....\n....\n....\n\n7. Glider avanza una diagonal en cuatro generaciones.\nEntrada:\n.#........\n..#.......\n###.......\n..........\n..........\n..........\n..........\n..........\n..........\n..........\nN: 4\nSalida:\n..........\n..#.......\n...#......\n.###......\n..........\n..........\n..........\n..........\n..........\n..........\n\n8. Nacimiento por tres vecinas.\nEntrada:\n....\n.##.\n.#..\n....\nN: 1\nSalida:\n....\n.##.\n.##.\n....\n\n9. Borde superior sin wrap.\nEntrada:\n###\n...\n...\nN: 1\nSalida:\n.#.\n.#.\n...\n\nFORMATO DE RESPUESTA\nDevolvé únicamente el código completo de vida.py, en un solo bloque de código Python, sin texto adicional. El código debe poder copiarse y ejecutarse tal cual, sin edición manual.\n",
+  "prompt_count": 1,
+  "totals": {
+    "prompt_tokens": 1337,
+    "completion_tokens": 2198,
+    "cached_tokens": 1024,
+    "reasoning_tokens": 1530,
+    "fresh_prompt_tokens": 313,
+    "cost": 0.0004768504,
+    "cache_discount": 0.0,
+    "cache_hit": true
+  },
+  "title": "Implementa vida.py de acuerdo con la especificacion completa del context…",
+  "turns": [
+    {
+      "n": 1,
+      "prompt": "Implementa vida.py de acuerdo con la especificacion completa del contexto estatico. Input de esta tarea: una ruta de archivo de grilla y un entero N recibidos como argumentos de linea de comandos. Entrega el script completo, general para cualquier grilla rectangular valida, cumpliendo los nueve ejemplos de aceptacion y todas las restricciones.",
+      "reply": "```python\nimport sys\n\ndef count_neighbors(grid, r, c):\n    rows = len(grid)\n    cols = len(grid[0])\n    count = 0\n    for dr in (-1, 0, 1):\n        for dc in (-1, 0, 1):\n            if dr == 0 and dc == 0:\n                continue\n            nr, nc = r + dr, c + dc\n            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == '#':\n                count += 1\n    return count\n\ndef next_generation(grid):\n    rows = len(grid)\n    cols = len(grid[0])\n    new_grid = []\n    for r in range(rows):\n        row_chars = []\n        for c in range(cols):\n            count = count_neighbors(grid, r, c)\n            if grid[r][c] == '#':\n                if count == 2 or count == 3:\n                    row_chars.append('#')\n                else:\n                    row_chars.append('.')\n            else:\n                if count == 3:\n                    row_chars.append('#')\n                else:\n                    row_chars.append('.')\n        new_grid.append(''.join(row_chars))\n    return new_grid\n\ndef main():\n    if len(sys.argv) != 3:\n        print(\"Uso: python3 vida.py <archivo> <generaciones>\", file=sys.stderr)\n        sys.exit(1)\n\n    archivo = sys.argv[1]\n    try:\n        n = int(sys.argv[2])\n        if n < 0:\n            raise ValueError(\"N no puede ser negativo\")\n    except ValueError as e:\n        print(f\"Error: N debe ser un entero no negativo: {e}\", file=sys.stderr)\n        sys.exit(1)\n\n    try:\n        with open(archivo, 'r', encoding='utf-8') as f:\n            lineas = f.read().splitlines()\n    except FileNotFoundError:\n        print(f\"Error: no se encuentra el archivo {archivo}\", file=sys.stderr)\n        sys.exit(1)\n    except Exception as e:\n        print(f\"Error leyendo archivo: {e}\", file=sys.stderr)\n        sys.exit(1)\n\n    if not lineas:\n        print(\"Error: archivo vacío\", file=sys.stderr)\n        sys.exit(1)\n\n    ancho = len(lineas[0])\n    for linea in lineas:\n        if len(linea) != ancho:\n            print(\"Error: filas de distinta longitud\", file=sys.stderr)\n            sys.exit(1)\n\n    grid = lineas\n    for _ in range(n):\n        grid = next_generation(grid)\n\n    print('\\n'.join(grid))\n\nif __name__ == \"__main__\":\n    main()\n```",
+      "usage": {
+        "prompt_tokens": 1337,
+        "completion_tokens": 2198,
+        "cached_tokens": 1024,
+        "reasoning_tokens": 1530,
+        "fresh_prompt_tokens": 313,
+        "cost": 0.0004768504,
+        "cache_discount": 0.0,
+        "cache_hit": true
+      },
+      "params": {
+        "reasoning_effort": "high",
+        "thinking_budget": null,
+        "json_schema": null
+      },
+      "params_label": "effort=high",
+      "at": "2026-09-18T01:32:08"
+    }
+  ]
+}

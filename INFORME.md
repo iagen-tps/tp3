@@ -105,3 +105,40 @@ La API común no vuelve universales todos los parámetros: los controles deben
 depender de las capacidades del modelo. Además, las rutas de inferencia pueden
 diferir; `provider.require_parameters: true` permite exigir soporte de los
 parámetros enviados. [Selección de proveedores](https://openrouter.ai/docs/guides/routing/provider-selection).
+
+## Corridas del ejercicio 2
+
+Se usó `deepseek/deepseek-v4-flash-0731` desde la interfaz de chat, con
+`reasoning.effort: "high"` y JSON Schema desactivado. El
+[contexto estático](prompts/static_context.md) contiene rol, contexto, contrato,
+instrucciones, restricciones y nueve ejemplos de entrada/salida. El mensaje de
+usuario identifica el input y solicita la implementación completa.
+
+El **intento 1 es la conversación ganadora**: produjo
+[vida.py](vida.py) con **un único prompt de usuario** y pasó los nueve tests de
+la cátedra. El script se extrajo del bloque Python de la respuesta, sin cambiar
+ningún carácter de código. El intento 2 repitió el mismo mensaje en una
+conversación nueva para comprobar caching; también pasó los nueve tests. No hubo
+intentos quemados ni prompts de corrección.
+
+| Corrida y log | Prompts de usuario | Tests | Entrada | Salida | Razonamiento | Cacheados | Costo USD |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| [1 — ganadora](chats/20260918-013031__slot4__deepseek-v4-flash-0731/log.md) | 1 | 9/9 | 1.337 | 4.222 | 2.843 | 0 | 0,00094362 |
+| [2 — comprobación de cache](chats/20260918-013137__slot4__deepseek-v4-flash-0731/log.md) | 1 | 9/9 | 1.337 | 2.198 | 1.530 | 1.024 | 0,0004768504 |
+| **Total** | **2** | | **2.674** | **6.420** | **4.373** | **1.024** | **0,0014204704** |
+
+Los costos conservan la precisión de los `meta.json` correspondientes; los logs
+Markdown los muestran redondeados a seis decimales. Los tokens de razonamiento
+son parte de la salida, no se suman otra vez al total de salida.
+
+Se verificó que el contexto estático es idéntico en ambas conversaciones y en
+`prompts/static_context.md`. El `cached_tokens: 1024` del segundo intento confirma
+el cache hit, aunque `cache_discount` quedó en cero. La diferencia entre los
+costos totales de las dos corridas incluye también una salida de distinta
+longitud, por lo que no representa por sí sola el ahorro por caching.
+
+Para ejecutar los tests se copiaron, sin modificaciones, el script de cada
+respuesta y `tests/test_vida.py` a un directorio temporal, uno al lado del otro,
+y se ejecutó `python3 test_vida.py`. Ambas corridas terminaron con `Ran 9 tests`
+y `OK`. El `vida.py` de la raíz coincide exactamente con el bloque Python del
+log ganador; no fue reemplazado por la respuesta del segundo intento.
