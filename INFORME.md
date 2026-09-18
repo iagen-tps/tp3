@@ -142,3 +142,101 @@ respuesta y `tests/test_vida.py` a un directorio temporal, uno al lado del otro,
 y se ejecutó `python3 test_vida.py`. Ambas corridas terminaron con `Ran 9 tests`
 y `OK`. El `vida.py` de la raíz coincide exactamente con el bloque Python del
 log ganador; no fue reemplazado por la respuesta del segundo intento.
+
+## Ejercicio 3 — La cuenta final
+
+### Tokens de pensamiento y facturación
+
+La tabla de corridas anterior incluye los dos intentos del ejercicio 2 y sus
+totales. DeepSeek reportó los tokens de pensamiento en
+`completion_tokens_details.reasoning_tokens`: 2.843 en el primero y 1.530 en el
+segundo. En ambas corridas se obtuvo un conteo explícito de razonamiento.
+
+| Corrida | Salida total | Razonamiento, incluido en la salida | Salida visible: total menos razonamiento |
+|---|---:|---:|---:|
+| 1 | 4.222 | 2.843 | 1.379 |
+| 2 | 2.198 | 1.530 | 668 |
+| **Total** | **6.420** | **4.373** | **2.047** |
+
+El razonamiento representa **68,12 % de los tokens de salida**. OpenRouter
+factura esos tokens como salida: forman parte del cargo de generación aunque
+la interfaz solo muestre el código final. No se agregan 4.373 tokens a los 6.420,
+porque eso los contaría dos veces. Tampoco `reasoning.exclude` elimina ese cargo;
+solo controla su devolución en la respuesta.
+[Documentación de razonamiento](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens).
+
+### Tokens cacheados y ahorro
+
+El primer intento reportó cero tokens cacheados; el segundo, 1.024 de sus 1.337
+tokens de entrada. Entre ambos hubo **1.650 tokens de entrada nuevos** y **1.024
+leídos del cache**, dentro de los 2.674 tokens de entrada totales.
+
+El catálogo público de
+[DeepSeek V4 Flash 0731](https://openrouter.ai/deepseek/deepseek-v4-flash-0731),
+consultado mediante [`GET /api/v1/models`](https://openrouter.ai/api/v1/models),
+devuelve USD **0,06 por millón de tokens de entrada** y USD **0,012 por millón
+de tokens leídos del cache**. Con esas tarifas, el ahorro estimado es:
+
+```text
+ahorro = tokens_cacheados × (tarifa_entrada − tarifa_cache) / 1.000.000
+       = 1.024 × (0,06 − 0,012) / 1.000.000
+       = USD 0,000049152
+```
+
+| Corrida | Entrada sin descuento por cache, USD | Entrada con cache, USD | Ahorro estimado, USD |
+|---|---:|---:|---:|
+| 1 | 0,00008022 | 0,00008022 | 0 |
+| 2 | 0,00008022 | 0,000031068 | 0,000049152 |
+| **Total** | **0,00016044** | **0,000111288** | **0,000049152** |
+
+En la segunda corrida, este cálculo reduce el costo de entrada en **61,27 %**.
+Es una estimación con las tarifas del catálogo, no un desglose confirmado de la
+factura: los logs no conservaron el proveedor de inferencia ni el ID de generación
+necesario para recuperar el detalle de cada solicitud. La tarifa efectiva de esa
+ruta puede ser distinta. El `cache_discount` persistido vale cero y el cliente
+también usa cero cuando el campo no llega; por eso ese valor no permite concluir
+que el ahorro real haya sido cero. El cache hit sí está confirmado por el usage.
+
+Los precios de referencia de la interfaz (USD 0,065 de entrada, 0,180 de salida y
+0,016 de lectura de cache por millón) corresponden a su registry y difieren del
+catálogo consultado. Los cargos de la tabla de corridas son los `cost` devueltos
+por OpenRouter, no cálculos hechos con esos precios de la interfaz.
+
+### Gasto y contraste por API con OpenRouter
+
+El gasto de los **dos intentos del ejercicio 2** es **USD 0,0014204704**. El grupo
+recibió únicamente una API key, sin acceso a la cuenta ni al dashboard de
+actividad. **Por esa restricción, el contraste se realizó por API en lugar de
+consultar el dashboard**, mediante
+[`GET /api/v1/key`](https://openrouter.ai/docs/api/api-reference/api-keys/get-current-key),
+autenticado con la key local, sin incorporarla al informe ni a los logs.
+
+La respuesta informó `usage_daily: 0.02468082` e `is_management_key: false`.
+Para comparar el mismo alcance, se sumaron las pruebas del ejercicio 1 del mismo
+día UTC, incluidas las dos consultas de Gemini, a las dos corridas del ejercicio 2.
+
+| Concepto | USD |
+|---|---:|
+| Pruebas del ejercicio 1 del mismo día UTC | 0,02326035 |
+| Dos intentos del ejercicio 2 | 0,0014204704 |
+| **Suma de los logs de ese día** | **0,0246808204** |
+| **Gasto diario informado por la API de OpenRouter** | **0,02468082** |
+| Diferencia: logs menos API | 0,0000000004 |
+
+La suma de los logs, redondeada a ocho decimales, coincide con el gasto diario
+devuelto por OpenRouter. La diferencia indicada es de redondeo y no se agrega a
+los cargos del ejercicio 2. Las pruebas del ejercicio 1 se incluyen aquí
+únicamente para reconciliar el acumulado diario de la key.
+
+**Alcance del contraste:** la coincidencia verifica el gasto diario agregado
+informado por OpenRouter frente a la suma de los logs de ese día. **No pudimos
+consultar el dashboard porque no tenemos acceso a la cuenta: solo recibimos la
+API key.** Tampoco pudimos verificar el detalle individual de cada solicitud. El endpoint de
+[actividad](https://openrouter.ai/docs/api/api-reference/analytics/get-user-activity)
+exige una key de administración, capacidad que la key entregada no tiene.
+
+### Conclusión
+
+Mantendríamos `deepseek/deepseek-v4-flash-0731`: resolvió los nueve tests con un solo prompt de usuario.\
+Probaríamos `effort: medium` para reducir el pensamiento, que representa el 68,12 % de la salida; lo adoptaríamos solo si conserva los nueve tests en un prompt.\
+Conservaríamos el contrato y los ejemplos como prefijo idéntico entre intentos, porque la segunda corrida confirmó 1.024 tokens cacheados.
