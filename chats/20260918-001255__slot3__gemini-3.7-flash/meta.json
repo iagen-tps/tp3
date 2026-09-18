@@ -1,0 +1,42 @@
+{
+  "id": "a142f9e28b5b",
+  "model_id": "google/gemini-3.7-flash",
+  "started_at": "2026-09-18T00:12:55",
+  "static_context": "",
+  "prompt_count": 1,
+  "totals": {
+    "prompt_tokens": 22,
+    "completion_tokens": 2829,
+    "cached_tokens": 0,
+    "reasoning_tokens": 1038,
+    "fresh_prompt_tokens": 22,
+    "cost": 0.01062525,
+    "cache_discount": 0.0,
+    "cache_hit": false
+  },
+  "title": "Devolvé los datos del programa solicitado:",
+  "turns": [
+    {
+      "n": 1,
+      "prompt": "Devolvé los datos del programa solicitado:\nnombre vida.py, lenguaje Python y 9 tests.",
+      "reply": "Aquí tenés el código del programa **`vida.py`** (implementación del clásico *Juego de la Vida de Conway*) y el archivo de pruebas con exactamente **9 tests** unitarios utilizando `unittest`.\n\n---\n\n### 1. Código principal: `vida.py`\n\n```python\n\"\"\"Módulo vida.py\n\nImplementación de las reglas del Juego de la Vida de Conway.\n\"\"\"\n\n\ndef contar_vecinos(tablero: list[list[int]], fila: int, col: int) -> int:\n    \"\"\"Cuenta la cantidad de células vivas alrededor de una posición (fila, col).\"\"\"\n    filas = len(tablero)\n    columnas = len(tablero[0])\n    vivos = 0\n\n    for f in range(max(0, fila - 1), min(filas, fila + 2)):\n        for c in range(max(0, col - 1), min(columnas, col + 2)):\n            if (f, c) != (fila, col):\n                vivos += tablero[f][c]\n\n    return vivos\n\n\ndef siguiente_generacion(tablero: list[list[int]]) -> list[list[int]]:\n    \"\"\"Calcula el estado del tablero en la siguiente generación según las reglas:\n\n    1. Célula viva con < 2 vecinos vivos: muere (soledad).\n    2. Célula viva con 2 o 3 vecinos vivos: sobrevive.\n    3. Célula viva con > 3 vecinos vivos: muere (sobrepoblación).\n    4. Célula muerta con exactamente 3 vecinos vivos: nace (reproducción).\n    \"\"\"\n    if not tablero or not tablero[0]:\n        return []\n\n    filas = len(tablero)\n    columnas = len(tablero[0])\n    nuevo_tablero = [[0 for _ in range(columnas)] for _ in range(filas)]\n\n    for f in range(filas):\n        for c in range(columnas):\n            vecinos = contar_vecinos(tablero, f, c)\n            estado_actual = tablero[f][c]\n\n            if estado_actual == 1 and vecinos in (2, 3):\n                nuevo_tablero[f][c] = 1\n            elif estado_actual == 0 and vecinos == 3:\n                nuevo_tablero[f][c] = 1\n            else:\n                nuevo_tablero[f][c] = 0\n\n    return nuevo_tablero\n```\n\n---\n\n### 2. Archivo de pruebas: `test_vida.py` (9 Tests)\n\n```python\nimport unittest\nfrom vida import contar_vecinos, siguiente_generacion\n\n\nclass TestJuegoDeLaVida(unittest.TestCase):\n\n    def test_01_tablero_vacio(self):\n        \"\"\"Test 1: Un tablero vacío no produce cambios.\"\"\"\n        self.assertEqual(siguiente_generacion([]), [])\n\n    def test_02_muerte_por_soledad_sin_vecinos(self):\n        \"\"\"Test 2: Una célula viva sin vecinos muere.\"\"\"\n        tablero = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]\n        esperado = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]\n        self.assertEqual(siguiente_generacion(tablero), esperado)\n\n    def test_03_muerte_por_baja_poblacion_un_vecino(self):\n        \"\"\"Test 3: Una célula viva con un solo vecino muere.\"\"\"\n        tablero = [[1, 1, 0], [0, 0, 0], [0, 0, 0]]\n        esperado = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]\n        self.assertEqual(siguiente_generacion(tablero), esperado)\n\n    def test_04_supervivencia_con_dos_vecinos(self):\n        \"\"\"Test 4: Una célula viva con 2 vecinos sobrevive.\"\"\"\n        tablero = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]\n        # La célula central (1,1) tiene 2 vecinos, sobrevive\n        resultado = siguiente_generacion(tablero)\n        self.assertEqual(resultado[1][1], 1)\n\n    def test_05_supervivencia_con_tres_vecinos(self):\n        \"\"\"Test 5: Una célula viva con 3 vecinos sobrevive.\"\"\"\n        tablero = [[1, 1, 0], [1, 1, 0], [0, 0, 0]]\n        # Todas tienen 3 vecinos en el bloque 2x2\n        self.assertEqual(siguiente_generacion(tablero), tablero)\n\n    def test_06_muerte_por_sobrepoblacion(self):\n        \"\"\"Test 6: Una célula viva con 4 o más vecinos muere.\"\"\"\n        tablero = [[1, 1, 1], [1, 1, 0], [0, 0, 0]]\n        # La célula central (0,1) y (1,1) tienen 4 vecinos vivos\n        resultado = siguiente_generacion(tablero)\n        self.assertEqual(resultado[0][1], 0)\n        self.assertEqual(resultado[1][1], 0)\n\n    def test_07_nacimiento_por_reproduccion(self):\n        \"\"\"Test 7: Una célula muerta con exactamente 3 vecinos nace.\"\"\"\n        tablero = [[0, 1, 0], [1, 1, 0], [0, 0, 0]]\n        # La posición (0,0) está muerta y tiene 3 vecinos -> debe nacer\n        resultado = siguiente_generacion(tablero)\n        self.assertEqual(resultado[0][0], 1)\n\n    def test_08_patron_estatico_bloque(self):\n        \"\"\"Test 8: El patrón estático 'Bloque' (2x2) no cambia.\"\"\"\n        bloque = [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]]\n        self.assertEqual(siguiente_generacion(bloque), bloque)\n\n    def test_09_oscilador_parpadeador(self):\n        \"\"\"Test 9: El oscilador 'Blinker' alterna entre horizontal y vertical.\"\"\"\n        horizontal = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 1, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]\n        vertical = [[0, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 0, 0]]\n\n        # De horizontal a vertical\n        gen1 = siguiente_generacion(horizontal)\n        self.assertEqual(gen1, vertical)\n\n        # De vertical a horizontal nuevamente\n        gen2 = siguiente_generacion(gen1)\n        self.assertEqual(gen2, horizontal)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n```\n\n---\n\n### Cómo ejecutar los tests:\n```bash\npython -m unittest test_vida.py\n```",
+      "usage": {
+        "prompt_tokens": 22,
+        "completion_tokens": 2829,
+        "cached_tokens": 0,
+        "reasoning_tokens": 1038,
+        "fresh_prompt_tokens": 22,
+        "cost": 0.01062525,
+        "cache_discount": 0.0,
+        "cache_hit": false
+      },
+      "params": {
+        "reasoning_effort": null,
+        "thinking_budget": null,
+        "json_schema": null
+      },
+      "params_label": "",
+      "at": "2026-09-18T00:13:26"
+    }
+  ]
+}

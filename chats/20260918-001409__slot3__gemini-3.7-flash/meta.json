@@ -1,0 +1,61 @@
+{
+  "id": "181fac6da7fd",
+  "model_id": "google/gemini-3.7-flash",
+  "started_at": "2026-09-18T00:14:09",
+  "static_context": "",
+  "prompt_count": 1,
+  "totals": {
+    "prompt_tokens": 109,
+    "completion_tokens": 205,
+    "cached_tokens": 0,
+    "reasoning_tokens": 190,
+    "fresh_prompt_tokens": 109,
+    "cost": 0.0008505,
+    "cache_discount": 0.0,
+    "cache_hit": false
+  },
+  "title": "Devolvé los datos del programa solicitado:",
+  "turns": [
+    {
+      "n": 1,
+      "prompt": "Devolvé los datos del programa solicitado:\nnombre vida.py, lenguaje Python y 9 tests.",
+      "reply": "{\"nombre\":\"vida.py\",\"lenguaje\":\"Python\",\"tests\":9}",
+      "usage": {
+        "prompt_tokens": 109,
+        "completion_tokens": 205,
+        "cached_tokens": 0,
+        "reasoning_tokens": 190,
+        "fresh_prompt_tokens": 109,
+        "cost": 0.0008505,
+        "cache_discount": 0.0,
+        "cache_hit": false
+      },
+      "params": {
+        "reasoning_effort": null,
+        "thinking_budget": null,
+        "json_schema": {
+          "type": "object",
+          "properties": {
+            "nombre": {
+              "type": "string"
+            },
+            "lenguaje": {
+              "type": "string"
+            },
+            "tests": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "nombre",
+            "lenguaje",
+            "tests"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "params_label": "json_schema",
+      "at": "2026-09-18T00:14:54"
+    }
+  ]
+}

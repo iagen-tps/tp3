@@ -1,0 +1,19 @@
+{
+  "id": "aab63a2da4d5",
+  "model_id": "anthropic/claude-haiku-4.5",
+  "started_at": "2026-09-18T00:10:12",
+  "static_context": "",
+  "prompt_count": 0,
+  "totals": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cached_tokens": 0,
+    "reasoning_tokens": 0,
+    "fresh_prompt_tokens": 0,
+    "cost": 0.0,
+    "cache_discount": 0.0,
+    "cache_hit": false
+  },
+  "title": "Chat nuevo",
+  "turns": []
+}
